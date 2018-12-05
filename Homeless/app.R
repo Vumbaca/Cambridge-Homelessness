@@ -15,7 +15,6 @@ homeless_total <- read_rds("homeless.rds")
 # create shiny app ui and theme
 ui <- fluidPage(theme = shinytheme("sandstone"),
   
-  # create shiny app title
   titlePanel("Homelessness in Cambridge, MA"),
 
   navlistPanel(
@@ -48,29 +47,69 @@ ui <- fluidPage(theme = shinytheme("sandstone"),
                      
                      column(width = 6, plotOutput(outputId = "racet")))))),
       
-      tabPanel("Place",
-               
-               sidebarPanel(
-                  selectInput(inputId = "year", label = "Year", choices = c(2014, 2015, 2016, 2017), selected = 2017)),
-               
-               mainPanel(
-                  textOutput(outputId = "cambridge"))),
-      
       tabPanel("Situation",
                
                tabsetPanel(
                  
-                 tabPanel("Unsheltered"),
+                 tabPanel("Age",
+                          
+                          fluidRow(
+                            
+                            column(width = 6, plotOutput(outputId = "ageplot")),
+                            
+                            column(width = 6, tableOutput(outputId = "agetable")))),
                  
-                 tabPanel("Emergency"),
+                 tabPanel("Gender",
+                          
+                          fluidRow(
+                            
+                            column(width = 6, plotOutput(outputId = "genderplot")),
+                            
+                            column(width = 6, tableOutput(outputId = "gendertable")))),
                  
-                 tabPanel("Transitional")
-               )
+                 tabPanel("Race",
+                          
+                          fluidRow(
+                            
+                            column(width = 6, plotOutput(outputId = "raceplot")),
+                            
+                            column(width = 6, tableOutput(outputId = "racetable")))))),
+      
+      tabPanel("Place",
                
-               )
-  )
-)
+               sidebarPanel(
+                 
+                 selectInput(inputId = "year", label = "Year", choices = c(2014, 2015, 2016, 2017), selected = 2017)),
+               
+               mainPanel(
+                 
+                 tabsetPanel(
+                   
+                   tabPanel("General",
+                 
+                     tableOutput(outputId = "totaltable"),
+                     
+                     textOutput(outputId = "cambridge"),
+                     
+                     textOutput(outputId = "nationwide")),
+                   
+                   tabPanel("Veterans",
+                            
+                     tableOutput(outputId = "vettable"),
+                     
+                     textOutput(outputId = "vetcambridge"),
+                     
+                     textOutput(outputId = "vetnationwide")),
+                   
+                   tabPanel("Chronic",
+                            
+                     tableOutput(output = "chrtable"),
+                     
+                     textOutput(outputId = "chrcambridge"),
+                     
+                     textOutput(outputId = "chrnationwide")))))))
 
+# create server for app
 server <- function(input, output) {
   
   # create age percentage plot
@@ -179,21 +218,103 @@ server <- function(input, output) {
     
   }, height = 500, width = 500)
   
-  output$total <- renderText({
+  # create age average plot
+  output$ageplot <- renderPlot({
     
-    paste(
-      "Individuals Experiencing Homelessness in the United States:", 
-      filter(homeless_total, coc_name == "Total" & year == input$year)$count,
-      sep = " ")
+    cambridge_type %>%
+      select(type,
+             "< 18" = a_under_eighteen,
+             "18 - 24" = a_eighteen_twentyfour,
+             "> 24" = a_over_twentyfour) %>%
+      gather(key = age, value = average, -type) %>%
+      mutate(age = factor(age, c("< 18", "18 - 24", "> 24"))) %>%
+      mutate(type = factor(type, c("Unsheltered", "Emergency Shelter", "Transitional Housing"))) %>%
+      ggplot(aes(x = type, y = average, fill = age)) +
+      geom_bar(stat = "identity") +
+      labs(fill = "Age", x = "Living Situation", y = "Average Individuals Experiencing Homelessness 2012-2017")
     
-  })
+  }, height = 500, width = 500)
+  
+  # create age average table
+  output$agetable <- renderTable({
+    
+    cambridge_type %>%
+      select("Living Situation" = type,
+             "< 18" = a_under_eighteen,
+             "18 - 24" = a_eighteen_twentyfour,
+             "> 24" = a_over_twentyfour)
+    
+  }, height = 500, width = 500)
+  
+  # create gender average plot
+  output$genderplot <- renderPlot({
+    
+    cambridge_type %>%
+      select(type,
+             "Male" = a_males,
+             "Female" = a_females,
+             "Trans" = a_trans,
+             "Non-binary" = a_non_identifying) %>%
+      gather(key = gender, value = average, -type) %>%
+      mutate(type = factor(type, c("Unsheltered", "Emergency Shelter", "Transitional Housing"))) %>%
+      ggplot(aes(x = type, y = average, fill = gender)) +
+      geom_bar(stat = "identity") +
+      labs(fill = "Gender", x = "Living Situation", y = "Average Individuals Experiencing Homelessness 2012-2017")
+    
+  }, height = 500, width = 500)
+  
+  # create gender average table
+  output$gendertable <- renderTable({
+    
+    cambridge_type %>%
+      select("Living Situation" = type,
+             "Male" = a_males,
+             "Female" = a_females,
+             "Trans" = a_trans,
+             "Non-binary" = a_non_identifying)
+    
+  }, height = 500, width = 500)
+  
+  # create race average plot
+  output$raceplot <- renderPlot({
+    
+    cambridge_type %>%
+      select(type,
+             "White" = a_white,
+             "Black" = a_black,
+             "Asian" = a_asian,
+             "Native American" = a_indian_alaskan,
+             "Pacific Islander" = a_hawaiian_islander,
+             "Multiple" = a_multiple) %>%
+      gather(key = race, value = average, -type) %>%
+      mutate(type = factor(type, c("Unsheltered", "Emergency Shelter", "Transitional Housing"))) %>%
+      ggplot(aes(x = type, y = average, fill = race)) +
+      geom_bar(stat = "identity") +
+      labs(fill = "Race", x = "Living Situation", y = "Average Individuals Experiencing Homelessness 2012-2017")
+    
+  }, height = 500, width = 500)
+  
+  # create race average table
+  output$racetable <- renderTable({
+    
+    cambridge_type %>%
+      select("Living Situation" = type,
+             "White" = a_white,
+             "Black" = a_black,
+             "Asian" = a_asian,
+             "Native American" = a_indian_alaskan,
+             "Pacific Islander" = a_hawaiian_islander,
+             "Multiple" = a_multiple)
+    
+  }, height = 500, width = 500)
   
   output$totaltable <- renderTable({
     
     homeless_total %>%
       filter(year == input$year & coc_name != "Total") %>%
-      select(coc_name, count) %>%
-      arrange(desc(count)) %>%
+      arrange(desc(total)) %>%
+      select("Continuum of Care" = coc_name,
+             "Individuals Experiencing Homelessness" = total) %>%
       head(10)
     
   })
@@ -207,15 +328,70 @@ server <- function(input, output) {
     
   })
   
-  output$description <- renderText({
+  output$nationwide <- renderText({
     
-    "This app draws on data collected by Cambridge government regarding homelessness in the city from 2012-2017. Every year a count of individuals experiencing homelessness is taken on a single night in January. Demographic information about the individuals counted is also collected but is recorded in aggregate for the given year. Cambridge sends its annual homelessness data to the U.S. Department of Housing and Urban Development. This app also uses data from all cities that submitted to HUD from 2013 to 2017."
+    paste(
+      "Individuals Experiencing Homelessness in the United States:", 
+      filter(homeless_total, coc_name == "Total" & year == input$year)$total,
+      sep = " ")
     
   })
   
-  output$git <- renderText({
+  output$vettable <- renderTable({
     
-    "The code for this app may be found at: https://github.com/Vumbaca/Final-Project-Vumbaca"
+    homeless_total %>%
+      filter(year == input$year & coc_name != "Total") %>%
+      arrange(desc(veterans)) %>%
+      select("Continuum of Care" = coc_name,
+             "Veterans Experiencing Homelessness" = veterans) %>%
+      head(10)
+    
+  })
+  
+  output$vetcambridge <- renderText({
+    
+    paste(
+      "Veterans Experiencing Homelessness in Cambridge:", 
+      filter(cambridge_total, year == input$year)$veteran,
+      sep = " ")
+    
+  })
+  
+  output$vetnationwide <- renderText({
+    
+    paste(
+      "Veterans Experiencing Homelessness in the United States:", 
+      filter(homeless_total, coc_name == "Total" & year == input$year)$veterans,
+      sep = " ")
+    
+  })
+  
+  output$chrtable <- renderTable({
+    
+    homeless_total %>%
+      filter(year == input$year & coc_name != "Total") %>%
+      arrange(desc(chronic)) %>%
+      select("Continuum of Care" = coc_name,
+             "Individuals Experiencing Chronic Homelessness" = chronic) %>%
+      head(10)
+    
+  })
+  
+  output$chrcambridge <- renderText({
+    
+    paste(
+      "Individuals Experiencing Chronic Homelessness in Cambridge:", 
+      filter(cambridge_total, year == input$year)$chronic,
+      sep = " ")
+    
+  })
+  
+  output$chrnationwide <- renderText({
+    
+    paste(
+      "Individuals Experiencing Chronic Homelessness in the United States:", 
+      filter(homeless_total, coc_name == "Total" & year == input$year)$chronic,
+      sep = " ")
     
   })
   

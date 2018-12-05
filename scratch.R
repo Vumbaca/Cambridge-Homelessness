@@ -1,7 +1,7 @@
 library(tidyverse)
 library(readxl)
 
-cambridge <- read_csv("Cambridge_Homeless_Point-in-Time_Count_data__2012-2018.csv", col_names =  FALSE, skip = 1)
+cambridge <- read_csv("Data/Cambridge_Homeless_Point-in-Time_Count_data__2012-2018.csv", col_names =  FALSE, skip = 1)
 
 cambridge_total <- cambridge %>%
   select("year" = X1, "persons" = X5) %>%
@@ -68,13 +68,28 @@ cambridge_age <- cambridge %>%
 
 cambridge_total <- left_join(cambridge_total, cambridge_age, by = "year")
 
+cambridge_other <- cambridge %>%
+  select("veteran" = X15,
+         "mental" = X26,
+         "substance" = X27,
+         "hiv" = X28,
+         "domestic" = X29) %>%
+  group_by(year) %>%
+  summarize(veteran = sum(veteran),
+            mental = sum(mental),
+            substance = sum(substance),
+            hiv = sum(hiv),
+            domestic = sum(domestic))
+
+cambridge_total <- left_join(cambridge_total, cambridge_other, by = "year")
+
 write_rds(cambridge_total, "Homeless/cambridge.rds", compress = "gz")
 
-homeless_17 <- read_excel("2007-2017-PIT-Counts-by-CoC.XLSX")
-homeless_16 <- read_excel("2007-2016-PIT-Counts-by-CoC.XLSX")
-homeless_15 <- read_excel("2007-2015-PIT-Counts-by-CoC.XLSX")
-homeless_14 <- read_excel("2007-2014-PIT-Counts-by-CoC.XLSX")
-homeless_13 <- read_excel("2007-2013-PIT-Counts-by-CoC.XLSX")
+homeless_17 <- read_excel("Data/2007-2017-PIT-Counts-by-CoC.XLSX")
+homeless_16 <- read_excel("Data/2007-2016-PIT-Counts-by-CoC.XLSX")
+homeless_15 <- read_excel("Data/2007-2015-PIT-Counts-by-CoC.XLSX")
+homeless_14 <- read_excel("Data/2007-2014-PIT-Counts-by-CoC.XLSX")
+homeless_13 <- read_excel("Data/2007-2013-PIT-Counts-by-CoC.XLSX")
 homeless_total <- left_join(homeless_17, homeless_16, by = c("CoC Number", "CoC Name"))
 homeless_total <- left_join(homeless_total, homeless_15, by = c("CoC Number", "CoC Name"))
 homeless_total <- left_join(homeless_total, homeless_14, by = c("CoC Number", "CoC Name"))

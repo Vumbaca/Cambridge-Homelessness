@@ -4,9 +4,11 @@ library(shiny)
 cambridge_total <- read_rds("cambridge.rds")
 homeless_total <- read_rds("homeless.rds")
 
-ui <- fluidPage(
+ui <- fluidPage(theme = "bootstrap.css",
   
   titlePanel("Homelessness in Cambridge, MA"),
+  
+  headerPanel("Test"),
   
   sidebarPanel(
     selectInput(inputId = "year", label = "Year", choices = c(2014, 2015, 2016, 2017), selected = 2017)

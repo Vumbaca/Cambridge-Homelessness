@@ -1,10 +1,10 @@
 library(tidyverse)
 library(shiny)
 
-cambridge_total <- read_rds("cambridge.rds")
+cambridge_total <- read_rds("cambridge_total.rds")
 homeless_total <- read_rds("homeless.rds")
 
-ui <- fluidPage(theme = "bootstrap.css",
+ui <- fluidPage(theme = "united",
   
   titlePanel("Homelessness in Cambridge, MA"),
   
@@ -18,11 +18,15 @@ ui <- fluidPage(theme = "bootstrap.css",
     textOutput(outputId = "cambridge"),
     
     tabsetPanel(type = "tabs",
-                tabPanel("Age", plotOutput(outputId = "ageplot")),
-                
-                tabPanel("Gender", plotOutput(outputId = "genderplot")),
-                
-                tabPanel("Race", plotOutput(outputId = "raceplot"))
+                tabPanel("Time",
+                  tabsetPanel(
+                    tabPanel("Age", plotOutput(outputId = "agep"), plotOutput(outputId = "aget")),
+                    tabPanel("Gender", plotOutput(outputId = "genderp"), plotOutput(outputId = "gendert")),
+                    tabPanel("Race", plotOutput(outputId = "racep"), plotOutput(outputId = "racet"))
+                  )
+                ),
+                tabPanel("Place"),
+                tabPanel("Situation")
     ),
     
     textOutput(outputId = "total"),
@@ -46,21 +50,35 @@ server <- function(input, output) {
     
   })
   
-  output$ageplot <- renderPlot({
+  output$agep <- renderPlot({
     
       cambridge_total %>%
       select(year,
              p_under_eighteen,
              p_eighteen_twentyfour,
              p_over_twentyfour) %>%
-      filter(year == input$year) %>%
+      filter(p_over_twentyfour != 0) %>%
       gather(key = age, value = percentage, -year) %>%
-      ggplot(aes(x = "", y = percentage, fill = age)) +
-      geom_bar(width = 1, stat = "identity")
+      ggplot(aes(x = year, y = percentage, fill = age)) +
+      geom_bar(stat = "identity")
     
   }, height = 400, width = 400)
   
-  output$genderplot <- renderPlot({
+  output$aget <- renderPlot({
+    
+    cambridge_total %>%
+      select(year,
+             t_under_eighteen,
+             t_eighteen_twentyfour,
+             t_over_twentyfour) %>%
+      filter(t_over_twentyfour != 0) %>%
+      gather(key = age, value = total, -year) %>%
+      ggplot(aes(x = year, y = total, color = age)) +
+      geom_line(size = 1)
+    
+  }, height = 400, width = 400)
+  
+  output$genderp <- renderPlot({
     
       cambridge_total %>%
       select(year,
@@ -68,14 +86,29 @@ server <- function(input, output) {
              p_females,
              p_trans,
              p_non_identifying) %>%
+      filter(p_males != 0) %>%
       gather(key = gender, value = percentage, -year) %>%
-      filter(year == input$year) %>%
-      ggplot(aes(x = "", y = percentage, fill = gender)) +
-      geom_bar(width = 1, stat = "identity")
+      ggplot(aes(x = year, y = percentage, fill = gender)) +
+      geom_bar(stat = "identity")
     
   }, height = 400, width = 400)
   
-  output$raceplot <- renderPlot({
+  output$gendert <- renderPlot({
+    
+      cambridge_total %>%
+      select(year,
+             t_males,
+             t_females,
+             t_trans,
+             t_non_identifying) %>%
+      filter(t_males != 0) %>%
+      gather(key = gender, value = total, -year) %>%
+      ggplot(aes(x = year, y = total, color = gender)) +
+      geom_line(size = 1)
+    
+  })
+  
+  output$racep <- renderPlot({
     
       cambridge_total %>%
       select(year,
@@ -85,10 +118,27 @@ server <- function(input, output) {
              p_indian_alaskan,
              p_hawaiian_islander,
              p_multiple) %>%
+      filter(p_white != 0) %>%
       gather(key = race, value = percentage, -year) %>%
-      filter(year == input$year) %>%
-      ggplot(aes(x = "", y = percentage, fill = race)) +
-      geom_bar(width = 1, stat = "identity")
+      ggplot(aes(x = year, y = percentage, fill = race)) +
+      geom_bar(stat = "identity")
+    
+  }, height = 400, width = 400)
+  
+  output$racet <- renderPlot({
+    
+    cambridge_total %>%
+      select(year,
+             t_white,
+             t_black,
+             t_asian,
+             t_indian_alaskan,
+             t_hawaiian_islander,
+             t_multiple) %>%
+      filter(t_white != 0) %>%
+      gather(key = race, value = total, -year) %>%
+      ggplot(aes(x = year, y = total, color = race)) +
+      geom_line(size = 1)
     
   }, height = 400, width = 400)
   

@@ -93,6 +93,25 @@ cambridge_age <- cambridge %>%
 # supplement base dataframe by adding age information for each year
 cambridge_total <- left_join(cambridge_total, cambridge_age, by = "year")
 
+cambridge_other <- cambridge %>%
+  select("year" = X1,
+         "persons" = X5,
+         "veteran" = X15,
+         "mental" = X26,
+         "substance" = X27,
+         "hiv" = X28,
+         "domestic" = X29,
+         "chronic" = X30) %>%
+  group_by(year) %>%
+  summarize(veteran = sum(veteran),
+            mental = sum(mental),
+            substance = sum(substance),
+            hiv = sum(hiv),
+            domestic = sum(domestic),
+            chronic = sum(chronic))
+
+cambridge_total <- left_join(cambridge_total, cambridge_other, by = "year")
+
 # save base dataframe to file which can be read by shiny app
 write_rds(cambridge_total, "Homeless/cambridge_total.rds", compress = "gz")
 
@@ -117,10 +136,10 @@ cambridge_g <- cambridge %>%
   # sort observations by type
   group_by(type) %>%
   # calculate average totals and average percentages of each gender identity group within each type
-  summarize(a_males = mean(males),
-            a_females = mean(females),
-            a_trans = mean(trans),
-            a_non_identifying = mean(non_identifying),
+  summarize(a_males = round(mean(males), digits = 2),
+            a_females = round(mean(females), digits = 2),
+            a_trans = round(mean(trans), digits = 2),
+            a_non_identifying = round(mean(non_identifying), digits = 2),
             p_males = mean(males) / mean(persons),
             p_females = mean(females) / mean(persons),
             p_trans = mean(trans) / mean(persons),
@@ -143,12 +162,12 @@ cambridge_r <- cambridge %>%
   # sort observations by type
   group_by(type) %>%
   # calculate average totals and average percentages of each racial identity group within each type
-  summarize(a_white = mean(white),
-            a_black = mean(black),
-            a_asian = mean(asian),
-            a_indian_alaskan = mean(indian_alaskan),
-            a_hawaiian_islander = mean(hawaiian_islander),
-            a_multiple = mean(multiple),
+  summarize(a_white = round(mean(white), digits = 2),
+            a_black = round(mean(black), digits = 2),
+            a_asian = round(mean(asian), digits = 2),
+            a_indian_alaskan = round(mean(indian_alaskan), digits = 2),
+            a_hawaiian_islander = round(mean(hawaiian_islander), digits = 2),
+            a_multiple = round(mean(multiple), digits = 2),
             p_white = mean(white) / mean(persons),
             p_black = mean(black) / mean(persons),
             p_asian = mean(asian) / mean(persons),
@@ -170,15 +189,34 @@ cambridge_a <- cambridge %>%
   # sort observations by type
   group_by(type) %>%
   # calculate average totals and average percentages of each age range group within each type
-  summarize(a_under_eighteen = mean(under_eighteen),
-            a_eighteen_twentyfour = mean(eighteen_twentyfour),
-            a_over_twentyfour = mean(over_twentyfour),
+  summarize(a_under_eighteen = round(mean(under_eighteen, digits = 2)),
+            a_eighteen_twentyfour = round(mean(eighteen_twentyfour, digits = 2)),
+            a_over_twentyfour = round(mean(over_twentyfour), digits = 2),
             p_under_eighteen = mean(under_eighteen) / mean(persons),
             p_eighteen_twentyfour = mean(eighteen_twentyfour) / mean(persons),
             p_over_twentyfour = mean(over_twentyfour) / mean(persons))
 
 # supplement base dataframe by adding age information for each year
 cambridge_type <- left_join(cambridge_type, cambridge_a, by = "type")
+
+cambridge_o <- cambridge %>%
+  select("type" = X3,
+         "persons" = X5,
+         "veteran" = X15,
+         "mental" = X26,
+         "substance" = X27,
+         "hiv" = X28,
+         "domestic" = X29,
+         "chronic" = X30) %>%
+  group_by(type) %>%
+  summarize(veteran = mean(veteran),
+            mental = mean(mental),
+            substance = mean(substance),
+            hiv = mean(hiv),
+            domestic = mean(domestic),
+            chronic = mean(chronic))
+
+cambridge_type <- left_join(cambridge_type, cambridge_o, by = "type")
 
 # save base dataframe to file which can be read by shiny app
 write_rds(cambridge_type, "Homeless/cambridge_type.rds", compress = "gz")
@@ -199,19 +237,19 @@ homeless_14 <- read_excel("Data/2007-2014-PIT-Counts-by-CoC.XLSX")
 homeless_13 <- read_excel("Data/2007-2013-PIT-Counts-by-CoC.XLSX")
 
 # add 2016 data to 2017 data linked according to continuum of care to create base dataframe
-homeless_total <- left_join(homeless_17, homeless_16, by = c("CoC Number", "CoC Name"))
+homeless <- left_join(homeless_17, homeless_16, by = c("CoC Number", "CoC Name"))
 
 # add 2015 data to base dataframe
-homeless_total <- left_join(homeless_total, homeless_15, by = c("CoC Number", "CoC Name"))
+homeless <- left_join(homeless, homeless_15, by = c("CoC Number", "CoC Name"))
 
 # add 2014 data to base dataframe
-homeless_total <- left_join(homeless_total, homeless_14, by = c("CoC Number", "CoC Name"))
+homeless <- left_join(homeless, homeless_14, by = c("CoC Number", "CoC Name"))
 
 # add 2014 data to base dataframe
-homeless_total <- left_join(homeless_total, homeless_13, by = c("CoC Number", "CoC Name"))
+homeless <- left_join(homeless, homeless_13, by = c("CoC Number", "CoC Name"))
 
 # save reorganize data to base dataframe
-homeless_total <- homeless_total %>%
+homeless_total <- homeless %>%
   # keep key variables only
   select(coc_num = `CoC Number`,
          coc_name = `CoC Name`,
@@ -221,7 +259,31 @@ homeless_total <- homeless_total %>%
          "2014" = `Total Homeless, 2014`,
          "2013" = `Total Homeless 2013`) %>%
   # reorganize data
-  gather(key = year, value = count, -coc_name, -coc_num)
+  gather(key = year, value = total, -coc_name, -coc_num)
+
+homeless_chronic <- homeless %>%
+  select(coc_num = `CoC Number`,
+         coc_name = `CoC Name`,
+         "2017" = `Chronically Homeless, 2017`,
+         "2016" = `Chronically Homeless, 2016`,
+         "2015" = `Chronically Homeless, 2015`,
+         "2014" = `Chronically Homeless, 2014`,
+         "2013" = `Total Chronically Homeless 2013`) %>%
+  gather(key = year, value = chronic, -coc_name, -coc_num)
+
+homeless_total <- left_join(homeless_total, homeless_chronic, by = c("year", "coc_num", "coc_name"))
+
+homeless_veteran <- homeless %>%
+  select(coc_num = `CoC Number`,
+         coc_name = `CoC Name`,
+         "2017" = `Homeless Veterans, 2017`,
+         "2016" = `Homeless Veterans, 2016`,
+         "2015" = `Homeless Veterans, 2015`,
+         "2014" = `Homeless Veterans, 2014`,
+         "2013" = `Total Veterans 2013`) %>%
+  gather(key = year, value = veterans, -coc_name, -coc_num)
+
+homeless_total <- left_join(homeless_total, homeless_veteran, by = c("year", "coc_num", "coc_name"))
   
 # save base dataframe to file which can be read by shiny app
 write_rds(homeless_total, "Homeless/homeless.rds", compress = "gz")

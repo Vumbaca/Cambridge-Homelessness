@@ -5,8 +5,8 @@ account: vumbaca
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 596086
-bundleId: 1728878
+bundleId: 1728891
 url: https://vumbaca.shinyapps.io/Homeless/
-when: 1543503260.06758
+when: 1543503513.25947
 asMultiple: FALSE
 asStatic: FALSE

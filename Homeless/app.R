@@ -22,8 +22,11 @@ cambridge_type <- read_rds("cambridge_type.rds")
 # save national homelessness data from file into dataframe
 homeless_total <- read_rds("homeless.rds")
 
-# create shiny app ui and theme
-ui <- fluidPage(theme = shinytheme("sandstone"),
+# create shiny app ui
+ui <- fluidPage(
+  
+  # pick theme
+  theme = shinytheme("sandstone"),
 
   # create navigation bar with app title
   navbarPage("Homelessness in Cambridge, MA",
@@ -149,7 +152,7 @@ ui <- fluidPage(theme = shinytheme("sandstone"),
                  sliderInput(inputId = "count", label = "Number of Results to Display", min = 01, max = 50, value = 15),
                  
                  # ask user if they want 
-                 checkboxInput(inputId = "prop", label = "Use Proportionally Sized Map Circles?", value = FALSE)),
+                 checkboxInput(inputId = "prop", label = "Use Proportionally Sized Map Circles", value = FALSE)),
                
                # create two thirds right side panel for output
                mainPanel(
@@ -163,29 +166,35 @@ ui <- fluidPage(theme = shinytheme("sandstone"),
                      # create total homeless map
                      leafletOutput(outputId = "total_map"),
                  
+                     # create row with pair of column for to organization
+                     fluidRow(
+                     
                      # create table within tab called total
-                     tableOutput(outputId = "total_table"),
+                     column(tableOutput(outputId = "total_table"), width = 6),
                      
                      # create text on total in Cambridge
-                     textOutput(outputId = "total_cambridge"),
+                     column(textOutput(outputId = "total_cambridge"),
                      
                      # create nationwide total text
-                     textOutput(outputId = "total_nation")),
+                     textOutput(outputId = "total_nation"), width = 6))),
                    
                    # create tab called veterans
-                   tabPanel("Veterans",
+                   tabPanel("Homeless Veterans",
                             
                      # create homeless veterans map
                      leafletOutput(outputId = "vet_map"),
-                            
+                     
+                     # create row with pair of columns for organization
+                     fluidRow(
+                     
                      # create table within tab called veterans
-                     tableOutput(outputId = "vet_table"),
+                     column(tableOutput(outputId = "vet_table"), width = 6),
                      
                      # create text on veterans in Cambridge
-                     textOutput(outputId = "vet_cambridge"),
+                     column(textOutput(outputId = "vet_cambridge"),
                      
                      # create nationwide veterans text
-                     textOutput(outputId = "vet_nation")),
+                     textOutput(outputId = "vet_nation"), width = 6))),
                    
                    # create tab called chronic
                    tabPanel("Chronically Homeless",
@@ -193,14 +202,17 @@ ui <- fluidPage(theme = shinytheme("sandstone"),
                      # create chronically homeless map
                      leafletOutput(outputId = "chron_map"),
                      
+                     # create row with pair of columns for organization
+                     fluidRow(
+                     
                      # create table within chronically homeless tab
-                     tableOutput(output = "chron_table"),
+                     column(tableOutput(output = "chron_table"), width = 6),
                      
                      # create chronically homeless in Cambridge text
-                     textOutput(outputId = "chron_cambridge"),
+                     column(textOutput(outputId = "chron_cambridge"),
                      
                      # create text on chronically homeless nationwide
-                     textOutput(outputId = "chron_nation")))))))
+                     textOutput(outputId = "chron_nation"), width = 6))))))))
 
 # create server for app
 server <- function(input, output) {
@@ -731,7 +743,7 @@ server <- function(input, output) {
       # add circle markers for top results
       addCircleMarkers(radius = if(input$prop){~total/1000}else{10},
                        # make label information viewable on hover
-                       label = ~label, color = "blue", weight = 0.1)})
+                       label = ~label, color = "purple", weight = 0.1)})
   
   # create veteran homelessness map
   output$vet_map <- renderLeaflet({
@@ -758,7 +770,7 @@ server <- function(input, output) {
     # save new variable label to dataframe
     homeless_map_vet <- homeless_map_vet %>%
       # create new variable which is combination of location and total
-      mutate(label = paste(location, veterans, sep = ": "))
+      mutate(label = paste(spot, veterans, sep = ": "))
 
     # create map from data on veterans
     leaflet(homeless_map_vet, options = leafletOptions(minZoom = 4, maxZoom = 10)) %>%
@@ -767,7 +779,7 @@ server <- function(input, output) {
       # center starting map view on middle of continental united states
       setView(lng = -98.5795, lat = 39.8283, zoom = 4) %>%
       # add circle markers for top results
-      addCircleMarkers(radius = if(input$prop){~total/1000}else{10},
+      addCircleMarkers(radius = if(input$prop){~veterans/100}else{10},
                        # make label information viewable on hover
                        label = ~label, color = "blue", weight = 0.1)})
 
@@ -796,7 +808,7 @@ server <- function(input, output) {
     # save new variable label to dataframe
     homeless_map_chron <- homeless_map_chron %>%
       # create new variable which is combination of location and total
-      mutate(label = paste(location, chronic, sep = ": "))
+      mutate(label = paste(spot, chronic, sep = ": "))
 
     # create map from chronic homelessness data
     leaflet(homeless_map_chron, options = leafletOptions(minZoom = 4, maxZoom = 10)) %>%
@@ -805,9 +817,9 @@ server <- function(input, output) {
       # center starting map view on middle of continental united states
       setView(lng = -98.5795, lat = 39.8283, zoom = 4) %>%
       # add circle markers for top results
-      addCircleMarkers(radius = if(input$prop){~total/1000}else{10},
+      addCircleMarkers(radius = if(input$prop){~chronic/250}else{10},
                        # make label information viewable on hover
-                       label = ~label, color = "blue", weight = 0.1)})}
+                       label = ~label, color = "red", weight = 0.1)})}
 
 # run app
 shinyApp(ui = ui, server = server)

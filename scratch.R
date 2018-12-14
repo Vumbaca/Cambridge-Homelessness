@@ -287,3 +287,28 @@ homeless_total <- left_join(homeless_total, homeless_veteran, by = c("year", "co
   
 # save base dataframe to file which can be read by shiny app
 write_rds(homeless_total, "Homeless/homeless.rds", compress = "gz")
+
+homeless_map <- homeless_total %>%
+  filter(!str_detect(coc_name, "Balance of State")) %>%
+  filter(!str_detect(coc_name, "BoS"))
+
+homeless_map$coc_name <- homeless_map$coc_name %>%
+  str_remove(" CoC") %>%
+  str_remove(" Continuum of Care") %>%
+  str_remove(" City") %>%
+  str_remove(" County") %>%
+  str_remove(" and") %>%
+  str_remove(" &") %>%
+  str_remove(" Homeless Initiative") %>%
+  str_remove("Metropolitan ") %>%
+  str_remove("/.{1,}") %>%
+  str_remove(",.{1,}") %>%
+  str_remove("-.{1,}")
+
+homeless_map$state <- homeless_map$coc_num %>%
+  str_remove("-.{3}")
+
+homeless_map <- homeless_map %>%
+  mutate(location = paste(coc_name, state, sep = ", "))
+
+write_rds(homeless_map, "Homeless/homeless_map.rds", compress = "gz")

@@ -234,8 +234,6 @@ cambridge_type <- left_join(cambridge_type, cambridge_o, by = "type")
 # save base dataframe to file which can be read by shiny app
 write_rds(cambridge_type, "Homeless/cambridge_type.rds", compress = "gz")
 
-###########################
-
 # read data from 2017 into dataframe
 homeless_17 <- read_excel("Data/2007-2017-PIT-Counts-by-CoC.XLSX")
 
@@ -263,7 +261,7 @@ homeless <- left_join(homeless, homeless_14, by = c("CoC Number", "CoC Name"))
 # add 2014 data to base dataframe
 homeless <- left_join(homeless, homeless_13, by = c("CoC Number", "CoC Name"))
 
-# save reorganize data to base dataframe
+# save reorganized data to base dataframe
 homeless_total <- homeless %>%
   # keep key variables only
   select(coc_num = `CoC Number`,
@@ -276,7 +274,9 @@ homeless_total <- homeless %>%
   # reorganize data
   gather(key = year, value = total, -coc_name, -coc_num)
 
+# save reorganized chronic homelessness information to separate dataframe
 homeless_chronic <- homeless %>%
+  # keep key variables only
   select(coc_num = `CoC Number`,
          coc_name = `CoC Name`,
          "2017" = `Chronically Homeless, 2017`,
@@ -284,11 +284,15 @@ homeless_chronic <- homeless %>%
          "2015" = `Chronically Homeless, 2015`,
          "2014" = `Chronically Homeless, 2014`,
          "2013" = `Total Chronically Homeless 2013`) %>%
+  # reorganize data
   gather(key = year, value = chronic, -coc_name, -coc_num)
 
+# add data on chronic homelessness to base dataframe
 homeless_total <- left_join(homeless_total, homeless_chronic, by = c("year", "coc_num", "coc_name"))
 
+# save reorganized veteran homelessness information to separate dataframe
 homeless_veteran <- homeless %>%
+  # keep key variables only
   select(coc_num = `CoC Number`,
          coc_name = `CoC Name`,
          "2017" = `Homeless Veterans, 2017`,
@@ -296,34 +300,54 @@ homeless_veteran <- homeless %>%
          "2015" = `Homeless Veterans, 2015`,
          "2014" = `Homeless Veterans, 2014`,
          "2013" = `Total Veterans 2013`) %>%
+  # reorganize data
   gather(key = year, value = veterans, -coc_name, -coc_num)
 
+# add data on veteran homelessness to base dataframe
 homeless_total <- left_join(homeless_total, homeless_veteran, by = c("year", "coc_num", "coc_name"))
   
-# save base dataframe to file which can be read by shiny app
-write_rds(homeless_total, "Homeless/homeless.rds", compress = "gz")
-
-homeless_map <- homeless_total %>%
-  filter(!str_detect(coc_name, "Balance of State")) %>%
-  filter(!str_detect(coc_name, "BoS"))
-
-homeless_map$coc_name <- homeless_map$coc_name %>%
-  str_remove(" CoC") %>%
+# save cleaned coc_name data
+homeless_total$coc_name <- homeless_total$coc_name %>%
+  # remove phrase continuum of care from all coc_names
   str_remove(" Continuum of Care") %>%
+  # remove its abbreviation too
+  str_remove(" CoC") %>%
+  # remove phrase balance of state from all coc_names
+  str_remove(" Balance of State") %>%
+  # remove its abbreviation too
+  str_remove(" \\(BoS\\)") %>%
+  # remove commonwealth version also
+  str_remove(" Balance of Commonwealth") %>%
+  # remove word statewide from all coc_names
+  str_remove(" Statewide") %>%
+  # remove word city from all coc_names
   str_remove(" City") %>%
+  # remove word county from all coc_names
   str_remove(" County") %>%
+  # remove word and from all coc_names
   str_remove(" and") %>%
+  # remove ampersand symbol from all coc_names
   str_remove(" &") %>%
-  str_remove(" Homeless Initiative") %>%
-  str_remove("Metropolitan ") %>%
+  # remove any content after slashes from all coc_names
   str_remove("/.{1,}") %>%
+  # remove any content after commas from all coc_names
   str_remove(",.{1,}") %>%
-  str_remove("-.{1,}")
+  # remove any content after dashes from all coc_names
+  str_remove("-.{1,}") %>%
+  # remove word metropolitan from all coc_names
+  str_remove("Metropolitan ") %>%
+  # remove phrase homeless initiative from all coc_names also
+  str_remove(" Homeless Initiative")
 
-homeless_map$state <- homeless_map$coc_num %>%
+# create new variable state from part of coc_num
+homeless_total$state <- homeless_total$coc_num %>%
+  # keep only parts of coc_num other than dash and next three characters after it
   str_remove("-.{3}")
 
-homeless_map <- homeless_map %>%
+# save data with location variable to base dataframe
+homeless_total <- homeless_total %>%
+  # create new location variable from coc_name and state
   mutate(location = paste(coc_name, state, sep = ", "))
 
-write_rds(homeless_map, "Homeless/homeless_map.rds", compress = "gz")
+# save base dataframe to file which can be read by shiny app
+write_rds(homeless_total, "Homeless/homeless.rds", compress = "gz")

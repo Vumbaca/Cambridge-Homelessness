@@ -22,9 +22,6 @@ cambridge_type <- read_rds("cambridge_type.rds")
 # save national homelessness data from file into dataframe
 homeless_total <- read_rds("homeless.rds")
 
-# save national homelessness data for map from file to dataframe
-homeless_map <- read_rds("homeless_map.rds")
-
 # create shiny app ui and theme
 ui <- fluidPage(theme = shinytheme("sandstone"),
 
@@ -149,7 +146,10 @@ ui <- fluidPage(theme = shinytheme("sandstone"),
                  selectInput(inputId = "year", label = "Year", choices = c(2014, 2015, 2016, 2017), selected = 2017),
                
                  # prompt user to select a living situation type
-                 sliderInput(inputId = "count", label = "Number of Results to Display", min = 1, max = 100, value = 10)),
+                 sliderInput(inputId = "count", label = "Number of Results to Display", min = 01, max = 50, value = 15),
+                 
+                 # ask user if they want 
+                 checkboxInput(inputId = "prop", label = "Use Proportionally Sized Map Circles?", value = FALSE)),
                
                # create two thirds right side panel for output
                mainPanel(
@@ -584,182 +584,230 @@ server <- function(input, output) {
     
     # set dimensions of plot
   }, height = 500, width = 400)
-  
+
   # create table on total national homelessness
   output$total_table <- renderTable({
     
-    ##################
-    
+    # start with national data
     homeless_total %>%
+      # keep only year selected by user and remove annual sum
       filter(year == input$year & coc_name != "Total") %>%
+      # sort locations from highest total count to lowest
       arrange(desc(total)) %>%
-      select("Continuum of Care" = coc_name,
-             "Individuals Experiencing Homelessness" = total) %>%
-      head(10)
+      # keep only location and count variables
+      select("Continuum of Care" = spot, "Individuals Experiencing Homelessness" = total) %>%
+      # display how many top results requested by user or default of fifteen
+      head(input$count)
     
-  })
+  # set dimensions of table
+  }, height = 500, width = 500)
   
+  # report total homelessness figure for cambridge
   output$total_cambridge <- renderText({
     
-    paste(
-      "Individuals Experiencing Homelessness in Cambridge:", 
+    # combine phrase with value
+    paste("Individuals Experiencing Homelessness in Cambridge:",  
+      # extract total number of homeless people in cambridge that year
       filter(cambridge_total, year == input$year)$persons,
-      sep = " ")
-    
-  })
+      # separate parts with space
+      sep = " ")})
   
+  # report total homelessness figure for nation
   output$total_nation <- renderText({
     
-    paste(
-      "Individuals Experiencing Homelessness in the United States:", 
+    # combine phrase with value
+    paste("Individuals Experiencing Homelessness in the United States:", 
+      # extra total number of homeless people in whole united states that year
       filter(homeless_total, coc_name == "Total" & year == input$year)$total,
-      sep = " ")
-    
-  })
+      sep = " ")})
   
+  # create table on total veteran homelessness
   output$vet_table <- renderTable({
     
+    # start with national data
     homeless_total %>%
+      # keep only year selected by user and remove annual sum
       filter(year == input$year & coc_name != "Total") %>%
+      # sort locations from highest amount of homeless veterans to lowest
       arrange(desc(veterans)) %>%
-      select("Continuum of Care" = coc_name,
-             "Veterans Experiencing Homelessness" = veterans) %>%
-      head(10)
-    
-  })
+      # keep only location and amount variables
+      select("Continuum of Care" = spot, "Veterans Experiencing Homelessness" = veterans) %>%
+      # display how many top results requested by user or default of fifteen
+      head(input$count)
   
+  # set dimensions of table  
+  }, height = 500, width = 500)
+  
+  # report veteran homelessness figure for cambridge
   output$vet_cambridge <- renderText({
     
-    paste(
-      "Veterans Experiencing Homelessness in Cambridge:", 
+    # combine phrase with value
+    paste("Veterans Experiencing Homelessness in Cambridge:", 
+      # extract total number of homeless veterans in cambridge that year
       filter(cambridge_total, year == input$year)$veteran,
-      sep = " ")
-    
-  })
+      # separate parts with space
+      sep = " ")})
   
+  # report veteran homelessness figure for nation
   output$vet_nation <- renderText({
     
-    paste(
-      "Veterans Experiencing Homelessness in the United States:", 
+    # combine phrase with value
+    paste("Veterans Experiencing Homelessness in the United States:", 
+      # extract total number of homeless veterans in whole united states that year
       filter(homeless_total, coc_name == "Total" & year == input$year)$veterans,
-      sep = " ")
-    
-  })
+      # separate parts with space
+      sep = " ")})
   
+  # create table on total chronic homelessness
   output$chron_table <- renderTable({
     
+    # start with national data
     homeless_total %>%
+      # keep only year selected by user and remove annual sum
       filter(year == input$year & coc_name != "Total") %>%
+      # sort locations from highest amount of chronically homeless to lowest
       arrange(desc(chronic)) %>%
-      select("Continuum of Care" = coc_name,
-             "Individuals Experiencing Chronic Homelessness" = chronic) %>%
-      head(10)
-    
-  })
+      # keep only location and count variables
+      select("Continuum of Care" = spot, "Individuals Experiencing Chronic Homelessness" = chronic) %>%
+      # display how many top results requested by user or default of fifteen
+      head(input$count)
+   
+  # set dimensions of table 
+  }, height = 500, width = 500)
   
+  # report chronic homelessness figure for cambridge
   output$chron_cambridge <- renderText({
     
-    paste(
-      "Individuals Experiencing Chronic Homelessness in Cambridge:", 
+    # combine phrase with value
+    paste("Individuals Experiencing Chronic Homelessness in Cambridge:", 
+      # extract total number of chronically homeless in cambridge that year
       filter(cambridge_total, year == input$year)$chronic,
-      sep = " ")
-    
-  })
+      # separate parts with space
+      sep = " ")})
   
+  # report chronic homelessness figure for nation
   output$chron_nation <- renderText({
     
-    paste(
-      "Individuals Experiencing Chronic Homelessness in the United States:", 
+    # combine phrase with value
+    paste("Individuals Experiencing Chronic Homelessness in the United States:", 
+      # extract total number of chronically homeless in whole united states that year
       filter(homeless_total, coc_name == "Total" & year == input$year)$chronic,
-      sep = " ")
-    
-  })
-  
+      # separate parts with space
+      sep = " ")})
+
+  # create total homelessness map
   output$total_map <- renderLeaflet({
     
-    homeless_map_total <- homeless_map %>%
-      filter(coc_name != "Total") %>%
-      filter(year == input$year) %>%
+    # save as new dataframe
+    homeless_map_total <- homeless_total %>%
+      # keep only year selected by user and remove annual sum
+      filter(year == input$year & coc_name != "Total") %>%
+      # sort locations from highest total count to lowest
       arrange(desc(total)) %>%
+      # display how many top results requested by user or default of fifteen
       head(input$count)
     
+    # create new variable row from row number in ordered list
     homeless_map_total$row <- as.numeric(rownames(homeless_map_total))
     
+    # save new variables lon and lat to dataframe
     homeless_map_total <- homeless_map_total %>%
-      mutate(lon = geocode(location,
-                           output = "latlon",
-                           source = "dsk")[row, 1],
-             lat = geocode(location,
-                           output = "latlon",
-                           source = "dsk")[row, 2])
+      # create new variable which is longitude of location
+      mutate(lon = geocode(spot, output = "latlon", source = "dsk")[row, 1],
+             # create new variable which is latitude of location
+             lat = geocode(spot, output = "latlon", source = "dsk")[row, 2])
     
+    # save new variable label to dataframe
     homeless_map_total <- homeless_map_total %>%
-      mutate(label = paste(location, total, sep = ": "))
+      # create new variable which is combination of location and total
+      mutate(label = paste(spot, total, sep = ": "))
     
+    # create map from data
     leaflet(homeless_map_total, options = leafletOptions(minZoom = 4, maxZoom = 10)) %>%
+      # use osm black and white for map background
       addProviderTiles("OpenStreetMap.BlackAndWhite") %>%
+      # center starting map view on middle of continental united states
       setView(lng = -98.5795, lat = 39.8283, zoom = 4) %>%
-      addCircleMarkers(radius = 10, color = "blue", label = ~label, weight = 0.1)
-    
-  })
+      # add circle markers for top results
+      addCircleMarkers(radius = if(input$prop){~total/1000}else{10},
+                       # make label information viewable on hover
+                       label = ~label, color = "blue", weight = 0.1)})
   
+  # create veteran homelessness map
   output$vet_map <- renderLeaflet({
-  
-    homeless_map_vet <- homeless_map %>%
-      filter(coc_name != "Total") %>%
-      filter(year == input$year) %>%
-      arrange(desc(veterans)) %>%
-      head(input$count)
-    
-    homeless_map_vet$row <- as.numeric(rownames(homeless_map_vet))
-    
-    homeless_map_vet <- homeless_map_vet %>%
-      mutate(lon = geocode(location,
-                           output = "latlon",
-                           source = "dsk")[row, 1],
-             lat = geocode(location,
-                           output = "latlon",
-                           source = "dsk")[row, 2])
-    
-    homeless_map_vet <- homeless_map_vet %>%
-      mutate(label = paste(location, veterans, sep = ": "))
-    
-    leaflet(homeless_map_vet, options = leafletOptions(minZoom = 4, maxZoom = 10)) %>%
-      addProviderTiles("OpenStreetMap.BlackAndWhite") %>%
-      setView(lng = -98.5795, lat = 39.8283, zoom = 4) %>%
-      addCircleMarkers(radius = 10, color = "purple", label = ~label, weight = 0.1)
-    
-  })
-  
-  output$chron_map <- renderLeaflet({
-    
-    homeless_map_chron <- homeless_map %>%
-      filter(coc_name != "Total") %>%
-      filter(year == input$year) %>%
-      arrange(desc(chronic)) %>%
-      head(input$count)
-    
-    homeless_map_chron$row <- as.numeric(rownames(homeless_map_chron))
-    
-    homeless_map_chron <- homeless_map_chron %>%
-      mutate(lon = geocode(location,
-                           output = "latlon",
-                           source = "dsk")[row, 1],
-             lat = geocode(location,
-                           output = "latlon",
-                           source = "dsk")[row, 2])
-    
-    homeless_map_chron <- homeless_map_chron %>%
-      mutate(label = paste(location, chronic, sep = ": "))
-    
-    leaflet(homeless_map_chron, options = leafletOptions(minZoom = 4, maxZoom = 10)) %>%
-      addProviderTiles("OpenStreetMap.BlackAndWhite") %>%
-      setView(lng = -98.5795, lat = 39.8283, zoom = 4) %>%
-      addCircleMarkers(radius = 10, color = "red", label = ~label, weight = 0.1)
-      
-    
-  })
-  
-}
 
+    # save as new dataframe
+    homeless_map_vet <- homeless_total %>%
+      # keep only year selected by user and remove annual sum
+      filter(year == input$year & coc_name != "Total") %>%
+      # sort locations from highest amount of homeless veterans to lowest
+      arrange(desc(veterans)) %>%
+      # display how many top results requested by user or default of fifteen
+      head(input$count)
+
+    # create new variable row from row number in ordered list
+    homeless_map_vet$row <- as.numeric(rownames(homeless_map_vet))
+
+    # save new variables lon and lat to dataframe
+    homeless_map_vet <- homeless_map_vet %>%
+      # create new variable which is longitude of location
+      mutate(lon = geocode(spot, output = "latlon", source = "dsk")[row, 1],
+             # create new variable which is latitude of location
+             lat = geocode(spot, output = "latlon", source = "dsk")[row, 2])
+
+    # save new variable label to dataframe
+    homeless_map_vet <- homeless_map_vet %>%
+      # create new variable which is combination of location and total
+      mutate(label = paste(location, veterans, sep = ": "))
+
+    # create map from data on veterans
+    leaflet(homeless_map_vet, options = leafletOptions(minZoom = 4, maxZoom = 10)) %>%
+      # use osm black and white for map background
+      addProviderTiles("OpenStreetMap.BlackAndWhite") %>%
+      # center starting map view on middle of continental united states
+      setView(lng = -98.5795, lat = 39.8283, zoom = 4) %>%
+      # add circle markers for top results
+      addCircleMarkers(radius = if(input$prop){~total/1000}else{10},
+                       # make label information viewable on hover
+                       label = ~label, color = "blue", weight = 0.1)})
+
+  # create chronic homelessness map
+  output$chron_map <- renderLeaflet({
+
+    # save as new dataframe
+    homeless_map_chron <- homeless_total %>%
+      # keep only year selected by user and remove annual sum
+      filter(year == input$year & coc_name != "Total") %>%
+      # sort locations from highest amount of chronic homelessness to lowest
+      arrange(desc(chronic)) %>%
+      # display how many top results requested by user or default of fiften
+      head(input$count)
+
+    # create new variable row from row number in ordered list
+    homeless_map_chron$row <- as.numeric(rownames(homeless_map_chron))
+
+    # save new variabels lon and lat to dataframe
+    homeless_map_chron <- homeless_map_chron %>%
+      # create new variable which is longitude of location
+      mutate(lon = geocode(spot, output = "latlon", source = "dsk")[row, 1],
+             # create new variable which is latitude of location
+             lat = geocode(spot, output = "latlon", source = "dsk")[row, 2])
+
+    # save new variable label to dataframe
+    homeless_map_chron <- homeless_map_chron %>%
+      # create new variable which is combination of location and total
+      mutate(label = paste(location, chronic, sep = ": "))
+
+    # create map from chronic homelessness data
+    leaflet(homeless_map_chron, options = leafletOptions(minZoom = 4, maxZoom = 10)) %>%
+      # use osm black and white for map background
+      addProviderTiles("OpenStreetMap.BlackAndWhite") %>%
+      # center starting map view on middle of continental united states
+      setView(lng = -98.5795, lat = 39.8283, zoom = 4) %>%
+      # add circle markers for top results
+      addCircleMarkers(radius = if(input$prop){~total/1000}else{10},
+                       # make label information viewable on hover
+                       label = ~label, color = "blue", weight = 0.1)})}
+
+# run app
 shinyApp(ui = ui, server = server)

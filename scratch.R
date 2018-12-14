@@ -347,7 +347,7 @@ homeless_total$state <- homeless_total$coc_num %>%
 # save data with location variable to base dataframe
 homeless_total <- homeless_total %>%
   # create new location variable from coc_name and state
-  mutate(location = paste(coc_name, state, sep = ", "))
+  mutate(spot = paste(coc_name, state, sep = ", "))
 
 # save base dataframe to file which can be read by shiny app
 write_rds(homeless_total, "Homeless/homeless.rds", compress = "gz")

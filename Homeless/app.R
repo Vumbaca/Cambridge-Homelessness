@@ -1,119 +1,185 @@
 # call library for working with data
 library(tidyverse)
+
 # call library for creating shiny app
 library(shiny)
+
 # call library for stylizing shiny app
 library(shinythemes)
 
-# save data from file into dataframe
+# save data on total Cambridge homeless from file into dataframe
 cambridge_total <- read_rds("cambridge_total.rds")
-# save data from file into dataframe
+
+# save data on type of homelessness in Cambridge from file into dataframe
 cambridge_type <- read_rds("cambridge_type.rds")
-# save data from file into dataframe
+
+# save national homelessness data from file into dataframe
 homeless_total <- read_rds("homeless.rds")
 
 # create shiny app ui and theme
 ui <- fluidPage(theme = shinytheme("sandstone"),
-  
-  titlePanel("Homelessness in Cambridge, MA"),
 
-  navlistPanel(
+  # create navigation bar with app title
+  navbarPage("Homelessness in Cambridge, MA",
     
+      # create first navigation tab called time
       tabPanel("Time",
                
+        # create set of tabs within tab called time
         tabsetPanel(
           
+          # create tab called age
           tabPanel("Age", 
                    
+                   # create row within tab called age with two columns inside
                    fluidRow(
                      
-                     column(width = 6, plotOutput(outputId = "agep")),
+                     # create half page column with plot of age
+                     column(width = 6, plotOutput(outputId = "time_age_plot")),
                      
-                     column(width = 6, plotOutput(outputId = "aget")))),
+                     # create half page column with table of age
+                     column(width = 6, plotOutput(outputId = "time_age_table")))),
           
+          # create tab called gender
           tabPanel("Gender",
                    
+                   # create row within tab called gender with two columns inside
                    fluidRow(
                      
-                     column(width = 6, plotOutput(outputId = "genderp")),
+                     # create half page column with plot of gender
+                     column(width = 6, plotOutput(outputId = "time_gender_plot")),
                      
-                     column(width = 6, plotOutput(outputId = "gendert")))),
+                     # create half page column with table of gender
+                     column(width = 6, plotOutput(outputId = "time_gender_table")))),
           
+          # create tab called race
           tabPanel("Race",
                    
+                   # create row within tab called race with two columns inside
                    fluidRow(
                      
-                     column(width = 6, plotOutput(outputId = "racep")),
+                     # create half page column with plot of race
+                     column(width = 6, plotOutput(outputId = "time_race_plot")),
                      
-                     column(width = 6, plotOutput(outputId = "racet")))))),
+                     # create half page column with table of race
+                     column(width = 6, plotOutput(outputId = "time_race_table")))))),
       
+      # create second navigation tab called situation
       tabPanel("Situation",
                
+               # create set of tabs within tab called situation
                tabsetPanel(
                  
+                 # create another tab called age nested under situation
                  tabPanel("Age",
                           
+                          # create row under age tab containing two columns
                           fluidRow(
                             
-                            column(width = 6, plotOutput(outputId = "ageplot")),
+                            # create half page column with different age plot
+                            column(width = 6, plotOutput(outputId = "sit_age_plot")),
                             
-                            column(width = 6, tableOutput(outputId = "agetable")))),
+                            # create half page column with different age table
+                            column(width = 6, tableOutput(outputId = "sit_age_table")))),
                  
+                 # create another tab called gender nested under situation
                  tabPanel("Gender",
                           
+                          # create row under gender tab containing two columns
                           fluidRow(
                             
-                            column(width = 6, plotOutput(outputId = "genderplot")),
+                            # create half page column with different gender plot
+                            column(width = 6, plotOutput(outputId = "sit_gender_plot")),
                             
-                            column(width = 6, tableOutput(outputId = "gendertable")))),
+                            # create half page column with different gender table
+                            column(width = 6, tableOutput(outputId = "sit_gender_table")))),
                  
+                 # create another tab called race nested under situation
                  tabPanel("Race",
                           
+                          # create row under race tab containing two columns
                           fluidRow(
                             
-                            column(width = 6, plotOutput(outputId = "raceplot")),
+                            # create half page column with different race plot
+                            column(width = 6, plotOutput(outputId = "sit_race_plot")),
                             
-                            column(width = 6, tableOutput(outputId = "racetable")))))),
+                            # create half page column with different race table
+                            column(width = 6, tableOutput(outputId = "sit_race_table")))))),
       
+      # create third and final navigation tab called place
       tabPanel("Place",
                
+               # create one third left side panel for input
                sidebarPanel(
                  
-                 selectInput(inputId = "year", label = "Year", choices = c(2014, 2015, 2016, 2017), selected = 2017)),
+                 # prompt user to select a year
+                 selectInput(inputId = "year", label = "Select Year",
+                             # choose from years with national and local data
+                             choices = c(2014, 2015, 2016, 2017), selected = 2017),
                
+                 # prompt user to select a living situation type
+                 selectInput(inputId = "sit", label = "Select Living Situation Type",
+                             # choose from types of living situation as categorized by data
+                             choices = c("Unsheltered", "Emergency", "Transitional", "All"), selected = "All")),
+               
+               # create two thirds right side panel for output
                mainPanel(
                  
+                 # create set of tabs located in main panel
                  tabsetPanel(
                    
-                   tabPanel("General",
+                   # create tab called total
+                   tabPanel("Total",
+                            
+                     # create total homeless map
+                     leafletOutput(outputId = "total_map"),
                  
-                     tableOutput(outputId = "totaltable"),
+                     # create table within tab called total
+                     tableOutput(outputId = "total_table"),
                      
-                     textOutput(outputId = "cambridge"),
+                     # create text on total in Cambridge
+                     textOutput(outputId = "total_cambridge"),
                      
-                     textOutput(outputId = "nationwide")),
+                     # create nationwide total text
+                     textOutput(outputId = "total_nation")),
                    
+                   # create tab called veterans
                    tabPanel("Veterans",
                             
-                     tableOutput(outputId = "vettable"),
-                     
-                     textOutput(outputId = "vetcambridge"),
-                     
-                     textOutput(outputId = "vetnationwide")),
-                   
-                   tabPanel("Chronic",
+                     # create homeless veterans map
+                     leafletOutput(outputId = "vet_map"),
                             
-                     tableOutput(output = "chrtable"),
+                     # create table within tab called veterans
+                     tableOutput(outputId = "vet_table"),
                      
-                     textOutput(outputId = "chrcambridge"),
+                     # create text on veterans in Cambridge
+                     textOutput(outputId = "vet_cambridge"),
                      
-                     textOutput(outputId = "chrnationwide")))))))
+                     # create nationwide veterans text
+                     textOutput(outputId = "vet_nation")),
+                   
+                   # create tab called chronic
+                   tabPanel("Chronically Homeless",
+                            
+                     # create chronically homeless map
+                     leafletOutput(outputId = "chron_map"),
+                     
+                     # create table within chronically homeless tab
+                     tableOutput(output = "chron_table"),
+                     
+                     # create chronically homeless in Cambridge text
+                     textOutput(outputId = "chron_cambridge"),
+                     
+                     # create text on chronically homeless nationwide
+                     textOutput(outputId = "chron_nation")))))))
 
 # create server for app
 server <- function(input, output) {
   
+  ##################
+  
   # create age percentage plot
-  output$agep <- renderPlot({
+  output$time_age_plot <- renderPlot({
     
       cambridge_total %>%
       filter(p_over_twentyfour != 0) %>%
@@ -130,7 +196,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create age total plot
-  output$aget <- renderPlot({
+  output$time_age_table <- renderPlot({
     
     cambridge_total %>%
       filter(t_over_twentyfour != 0) %>%
@@ -147,7 +213,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create gender percentage plot
-  output$genderp <- renderPlot({
+  output$time_gender_plot <- renderPlot({
     
       cambridge_total %>%
       filter(p_males != 0) %>%
@@ -164,7 +230,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create gender total plot
-  output$gendert <- renderPlot({
+  output$time_gender_table <- renderPlot({
     
       cambridge_total %>%
       filter(t_males != 0) %>%
@@ -181,7 +247,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create race percentage plot
-  output$racep <- renderPlot({
+  output$time_race_plot <- renderPlot({
     
       cambridge_total %>%
       filter(p_white != 0) %>%
@@ -200,7 +266,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create race total plot
-  output$racet <- renderPlot({
+  output$time_race_table <- renderPlot({
     
     cambridge_total %>%
       filter(t_white != 0) %>%
@@ -219,7 +285,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create age average plot
-  output$ageplot <- renderPlot({
+  output$sit_age_plot <- renderPlot({
     
     cambridge_type %>%
       select(type,
@@ -236,7 +302,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create age average table
-  output$agetable <- renderTable({
+  output$sit_age_table <- renderTable({
     
     cambridge_type %>%
       select("Living Situation" = type,
@@ -247,7 +313,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create gender average plot
-  output$genderplot <- renderPlot({
+  output$sit_gender_plot <- renderPlot({
     
     cambridge_type %>%
       select(type,
@@ -264,7 +330,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create gender average table
-  output$gendertable <- renderTable({
+  output$sit_gender_table <- renderTable({
     
     cambridge_type %>%
       select("Living Situation" = type,
@@ -276,7 +342,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create race average plot
-  output$raceplot <- renderPlot({
+  output$sit_race_plot <- renderPlot({
     
     cambridge_type %>%
       select(type,
@@ -295,7 +361,7 @@ server <- function(input, output) {
   }, height = 500, width = 500)
   
   # create race average table
-  output$racetable <- renderTable({
+  output$sit_race_table <- renderTable({
     
     cambridge_type %>%
       select("Living Situation" = type,
@@ -308,7 +374,7 @@ server <- function(input, output) {
     
   }, height = 500, width = 500)
   
-  output$totaltable <- renderTable({
+  output$total_table <- renderTable({
     
     homeless_total %>%
       filter(year == input$year & coc_name != "Total") %>%
@@ -319,7 +385,7 @@ server <- function(input, output) {
     
   })
   
-  output$cambridge <- renderText({
+  output$total_cambridge <- renderText({
     
     paste(
       "Individuals Experiencing Homelessness in Cambridge:", 
@@ -328,7 +394,7 @@ server <- function(input, output) {
     
   })
   
-  output$nationwide <- renderText({
+  output$total_nation <- renderText({
     
     paste(
       "Individuals Experiencing Homelessness in the United States:", 
@@ -337,7 +403,7 @@ server <- function(input, output) {
     
   })
   
-  output$vettable <- renderTable({
+  output$vet_table <- renderTable({
     
     homeless_total %>%
       filter(year == input$year & coc_name != "Total") %>%
@@ -348,7 +414,7 @@ server <- function(input, output) {
     
   })
   
-  output$vetcambridge <- renderText({
+  output$vet_cambridge <- renderText({
     
     paste(
       "Veterans Experiencing Homelessness in Cambridge:", 
@@ -357,7 +423,7 @@ server <- function(input, output) {
     
   })
   
-  output$vetnationwide <- renderText({
+  output$vet_nation <- renderText({
     
     paste(
       "Veterans Experiencing Homelessness in the United States:", 
@@ -366,7 +432,7 @@ server <- function(input, output) {
     
   })
   
-  output$chrtable <- renderTable({
+  output$chron_table <- renderTable({
     
     homeless_total %>%
       filter(year == input$year & coc_name != "Total") %>%
@@ -377,7 +443,7 @@ server <- function(input, output) {
     
   })
   
-  output$chrcambridge <- renderText({
+  output$chron_cambridge <- renderText({
     
     paste(
       "Individuals Experiencing Chronic Homelessness in Cambridge:", 
@@ -386,7 +452,7 @@ server <- function(input, output) {
     
   })
   
-  output$chrnationwide <- renderText({
+  output$chron_nation <- renderText({
     
     paste(
       "Individuals Experiencing Chronic Homelessness in the United States:", 

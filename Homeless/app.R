@@ -76,11 +76,14 @@ ui <- fluidPage(theme = shinytheme("sandstone"),
           # create tab called other
           tabPanel("Other",
                    
-                   # create row within tab called other with one column inside
+                   # create row within tab called other with two columns inside
                    fluidRow(
                      
-                     # create full page column with plot of others
-                     column(width = 6, plotOutput(outputId = "time_other_plot")))))),
+                     # create half page column with plot of others
+                     column(width = 6, plotOutput(outputId = "time_other_plot")),
+                     
+                     # create half page column with overall homelessness plot
+                     column(width = 6, plotOutput(outputId = "time_overall_plot")))))),
       
       # create second navigation tab called situation
       tabPanel("Situation",
@@ -127,11 +130,14 @@ ui <- fluidPage(theme = shinytheme("sandstone"),
                  # create another tab called other nested under situation
                  tabPanel("Other",
                           
-                          # create row under other tab containing one column
+                          # create row under other tab containing two columns
                           fluidRow(
                             
-                            # create full page column with different other plot
-                            column(width = 12, plotOutput(outputId = "sit_other_plot")))))),
+                            # create half page column with different other plot
+                            column(width = 6, plotOutput(outputId = "sit_other_plot")),
+                            
+                            # create half page column with overall homelessness plot
+                            column(width = 6, plotOutput(outputId = "sit_overall_plot")))))),
       
       # create third and final navigation tab called place
       tabPanel("Place",
@@ -246,7 +252,9 @@ server <- function(input, output) {
       # plot as line graph
       geom_line(size = 1, alpha = 0.5) +
       # label plot
-      labs(color = "Age", x = "Year", y = "Total Individuals Experiencing Homelessness")
+      labs(color = "Age", x = "Year", y = "Total Individuals Experiencing Homelessness") +
+      # set y axis bounds
+      ylim(0, 600)
   
   # set dimensions of plot
   }, height = 500, width = 500)
@@ -296,7 +304,9 @@ server <- function(input, output) {
       # plot as line graph
       geom_line(size = 1, alpha = 0.5) +
       # label plot
-      labs(color = "Gender", x = "Year", y = "Total Individuals Experiencing Homelessness")
+      labs(color = "Gender", x = "Year", y = "Total Individuals Experiencing Homelessness") +
+      # set y axis bounds
+      ylim(0, 600)
   
   # set dimensions of plot  
   }, height = 500, width = 500)
@@ -350,7 +360,9 @@ server <- function(input, output) {
       # plot as line graph
       geom_line(size = 1, alpha = 0.5) +
       # label plot
-      labs(color = "Race", x = "Year", y = "Total Individuals Experiencing Homelessness")
+      labs(color = "Race", x = "Year", y = "Total Individuals Experiencing Homelessness") +
+      # set y axis bounds
+      ylim(0, 600)
     
   # set dimensions of plot
   }, height = 500, width = 500)
@@ -375,10 +387,32 @@ server <- function(input, output) {
       # plot as line graph
       geom_line(size = 2, alpha = .5) +
       # label plot
-      labs(color = "Group", x = "Year", y = "Total Individuals Experiencing Homelessness")
+      labs(color = "Group", x = "Year", y = "Total Individuals Experiencing Homelessness") +
+      # set y axis bounds
+      ylim(0, 600)
     
     # set dimensions of plot
-  }, height = 600, width = 1000)
+  }, height = 500, width = 600)
+  
+  # create overall total plot
+  output$time_overall_plot <- renderPlot({
+    
+    # start with cambridge data
+    cambridge_total %>%
+      # keep other variables and year variable
+      select(year,
+             persons) %>%
+      # plot other group averages as distinguished by color as function of time
+      ggplot(aes(x = year, y = persons)) +
+      # plot as line graph
+      geom_line(size = 2, alpha = .5) +
+      # label plot
+      labs(x = "Year", y = "Total Individuals Experiencing Homelessness") +
+      # set y axis bounds
+      ylim(0, 600)
+    
+    # set dimensions of plot
+  }, height = 500, width = 400)
   
   # create age average plot
   output$sit_age_plot <- renderPlot({
@@ -529,7 +563,27 @@ server <- function(input, output) {
       labs(fill = "Group", x = "Living Situation", y = "Average Individuals Experiencing Homelessness 2012-2017")
     
     # set dimensions of plot
-  }, height = 600, width = 1000)
+  }, height = 500, width = 600)
+  
+  # create overall average plot
+  output$sit_overall_plot <- renderPlot({
+    
+    # start with cambridge data on type
+    cambridge_type %>%
+      # keep average other variables and type
+      select(type,
+             persons) %>%
+      # set type as factor
+      mutate(type = factor(type, c("Unsheltered", "Emergency Shelter", "Transitional Housing"))) %>%
+      # plot other group averages as distinguished by color as function of type
+      ggplot(aes(x = type, y = persons)) +
+      # plot as bar graph
+      geom_bar(stat = "identity") +
+      # label plot
+      labs(x = "Living Situation", y = "Average Individuals Experiencing Homelessness 2012-2017")
+    
+    # set dimensions of plot
+  }, height = 500, width = 400)
   
   # create table on total national homelessness
   output$total_table <- renderTable({

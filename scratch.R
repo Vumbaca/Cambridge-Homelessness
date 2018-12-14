@@ -1,5 +1,6 @@
 # call library for tidying of data
 library(tidyverse)
+
 # call library for reading in data
 library(readxl)
 
@@ -12,7 +13,8 @@ cambridge[is.na(cambridge)] <- 0
 # create base dataframe with yearly count of persons experiencing homelessness
 cambridge_total <- cambridge %>%
   # keep only year and persons variables
-  select("year" = X1, "persons" = X5) %>%
+  select("year" = X1,
+         "persons" = X5) %>%
   # sort observations by year
   group_by(year) %>%
   # calculate total number of persons for all observations in each given year
@@ -93,7 +95,9 @@ cambridge_age <- cambridge %>%
 # supplement base dataframe by adding age information for each year
 cambridge_total <- left_join(cambridge_total, cambridge_age, by = "year")
 
+# save other information as separate dataframe
 cambridge_other <- cambridge %>%
+  # keep variables of year, persons, and counts of various other notable groups
   select("year" = X1,
          "persons" = X5,
          "veteran" = X15,
@@ -102,7 +106,9 @@ cambridge_other <- cambridge %>%
          "hiv" = X28,
          "domestic" = X29,
          "chronic" = X30) %>%
+  # sort observations by year
   group_by(year) %>%
+  # calculate totals for each other notable group within each year
   summarize(veteran = sum(veteran),
             mental = sum(mental),
             substance = sum(substance),
@@ -110,6 +116,7 @@ cambridge_other <- cambridge %>%
             domestic = sum(domestic),
             chronic = sum(chronic))
 
+# supplement base dataframe by adding age information for each year
 cambridge_total <- left_join(cambridge_total, cambridge_other, by = "year")
 
 # save base dataframe to file which can be read by shiny app
@@ -118,7 +125,8 @@ write_rds(cambridge_total, "Homeless/cambridge_total.rds", compress = "gz")
 # create base dataframe with average number of persons in each type of living situation over past seven years
 cambridge_type <- cambridge %>%
   # keep only type and persons variables
-  select("type" = X3, "persons" = X5) %>%
+  select("type" = X3,
+         "persons" = X5) %>%
   # sort observations by type
   group_by(type) %>%
   # calculate average number of persons for all observations of each given type
@@ -126,7 +134,7 @@ cambridge_type <- cambridge %>%
 
 # save gender information as separate dataframe
 cambridge_g <- cambridge %>%
-  # keep variables of year, persons, and counts of various gender identity groups
+  # keep variables of type, persons, and counts of various gender identity groups
   select("type" = X3,
          "persons" = X5,
          "females" = X11,
@@ -145,12 +153,12 @@ cambridge_g <- cambridge %>%
             p_trans = mean(trans) / mean(persons),
             p_non_identifying = mean(non_identifying) / mean(persons))
 
-# supplement base dataframe by adding gender information for each year
+# supplement base dataframe by adding gender information for each type
 cambridge_type <- left_join(cambridge_type, cambridge_g, by = "type")
 
 # save race information as separate dataframe
 cambridge_r <- cambridge %>%
-  # keep variables of year, persons, and counts of various racial identity groups
+  # keep variables of type, persons, and counts of various racial identity groups
   select("type" = X3,
          "persons" = X5,
          "white" = X20,
@@ -175,12 +183,12 @@ cambridge_r <- cambridge %>%
             p_hawaiian_islander = mean(hawaiian_islander) / mean(persons),
             p_multiple = mean(multiple) / mean(persons))
 
-# supplement base dataframe by adding race information for each year
+# supplement base dataframe by adding race information for each type
 cambridge_type <- left_join(cambridge_type, cambridge_r, by = "type")
 
 # save age information as separate dataframe
 cambridge_a <- cambridge %>%
-  # keep variables of year, persons, and counts of various age range groups
+  # keep variables of type, persons, and counts of various age range groups
   select("type" = X3, 
          "persons" = X5,
          "under_eighteen" = X8,
@@ -196,10 +204,12 @@ cambridge_a <- cambridge %>%
             p_eighteen_twentyfour = mean(eighteen_twentyfour) / mean(persons),
             p_over_twentyfour = mean(over_twentyfour) / mean(persons))
 
-# supplement base dataframe by adding age information for each year
+# supplement base dataframe by adding age information for each type
 cambridge_type <- left_join(cambridge_type, cambridge_a, by = "type")
 
+# save other information as separate dataframe
 cambridge_o <- cambridge %>%
+  # keep variables of type, persons, and counts of various other notable groups
   select("type" = X3,
          "persons" = X5,
          "veteran" = X15,
@@ -208,18 +218,23 @@ cambridge_o <- cambridge %>%
          "hiv" = X28,
          "domestic" = X29,
          "chronic" = X30) %>%
+  # sort observations by type
   group_by(type) %>%
-  summarize(veteran = mean(veteran),
-            mental = mean(mental),
-            substance = mean(substance),
-            hiv = mean(hiv),
-            domestic = mean(domestic),
-            chronic = mean(chronic))
+  # calculate averages of each other notable group within each type
+  summarize(a_veteran = mean(veteran),
+            a_mental = mean(mental),
+            a_substance = mean(substance),
+            a_hiv = mean(hiv),
+            a_domestic = mean(domestic),
+            a_chronic = mean(chronic))
 
+# supplement base dataframe by adding other information for each type
 cambridge_type <- left_join(cambridge_type, cambridge_o, by = "type")
 
 # save base dataframe to file which can be read by shiny app
 write_rds(cambridge_type, "Homeless/cambridge_type.rds", compress = "gz")
+
+###########################
 
 # read data from 2017 into dataframe
 homeless_17 <- read_excel("Data/2007-2017-PIT-Counts-by-CoC.XLSX")
